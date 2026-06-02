@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Take Sushi Kitchen Guide</title>
+<style>
+:root {
+  --bg: #0f0e0c;
+  --surface: #1a1916;
+  --surface2: #242320;
+  --border: #2e2c28;
+  --accent: #e8a020;
+  --accent2: #c85a2a;
+  --text: #e8e4dc;
+  --text-muted: #7a7568;
+  --text-dim: #4a4840;
+  --red: #e05252;
+  --green: #52a052;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── SCREENS ─── */
+.screen { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ─── SPLASH ─── */
+#splash {
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+#splash::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, rgba(232,160,32,0.12) 0%, transparent 70%);
+}
+.splash-emoji {
+  font-size: 80px;
+  margin-bottom: 24px;
+  display: block;
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.splash-title {
+  font-size: 42px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--accent);
+  text-align: center;
+  line-height: 1;
+  position: relative;
+}
+.splash-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 8px;
+  text-align: center;
+  position: relative;
+}
+.splash-divider {
+  width: 60px;
+  height: 2px;
+  background: var(--accent);
+  margin: 24px auto;
+  border-radius: 2px;
+  position: relative;
+}
+.splash-tagline {
+  font-size: 15px;
+  color: var(--text-muted);
+  text-align: center;
+  position: relative;
+  max-width: 260px;
+  line-height: 1.6;
+}
+.splash-btn {
+  margin-top: 40px;
+  position: relative;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  padding: 14px 40px;
+  border-radius: 50px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.splash-dots {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.dot {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(232,160,32,0.06);
+}
+
+/* ─── TOP NAV ─── */
+#topnav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: none;
+  align-items: center;
+  padding: 0 12px;
+  height: 52px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+#topnav.visible { display: flex; }
+.nav-tab {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+}
+.nav-tab.active { background: var(--accent); color: #000; }
+#toggle-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-right: 4px;
+}
+
+/* ─── GUIDE SCREEN ─── */
+#guide-screen { flex-direction: row; }
+#sidebar {
+  width: 260px;
+  max-width: 80vw;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: width 0.3s ease, opacity 0.3s ease;
+  position: relative;
+  z-index: 60;
+}
+#sidebar.collapsed { width: 0; opacity: 0; border-right: none; }
+#sidebar-header { padding: 16px 14px 12px; border-bottom: 1px solid var(--border); }
+#sidebar-header h2 { font-size: 16px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
+#sidebar-header p { font-size: 10px; color: var(--text-muted); margin-top: 2px; letter-spacing: 1px; text-transform: uppercase; }
+#search-box { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+#search-box input {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); padding: 7px 10px; border-radius: 8px; font-size: 13px;
+  outline: none; font-family: inherit;
+}
+#search-box input:focus { border-color: var(--accent); }
+#search-box input::placeholder { color: var(--text-dim); }
+#nav { overflow-y: auto; flex: 1; padding: 4px 0 80px; -webkit-overflow-scrolling: touch; position: relative; z-index: 60; }
+.category-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; background: none; border: none; color: var(--text-muted);
+  padding: 10px 14px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; cursor: pointer; text-align: left; font-family: inherit;
+}
+.category-btn.active { color: var(--accent); }
+.category-btn .arrow { transition: transform 0.2s; display: inline-block; }
+.category-btn.open .arrow { transform: rotate(90deg); }
+.dish-list { display: none; padding: 2px 0 4px; }
+.dish-list.open { display: block; }
+.dish-btn {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; background: none; border: none; color: var(--text-muted);
+  padding: 8px 14px 8px 26px; font-size: 13px; cursor: pointer;
+  text-align: left; line-height: 1.4; border-left: 2px solid transparent; font-family: inherit;
+}
+.dish-btn:active { background: var(--surface2); }
+.dish-btn.active { color: var(--accent); border-left-color: var(--accent); background: rgba(232,160,32,0.07); }
+.dish-btn .thumb {
+  width: 28px; height: 28px; border-radius: 6px; object-fit: cover;
+  flex-shrink: 0; border: 1px solid var(--border);
+}
+.dish-btn .thumb-placeholder {
+  width: 28px; height: 28px; border-radius: 6px; background: var(--surface2);
+  border: 1px solid var(--border); flex-shrink: 0; display: flex;
+  align-items: center; justify-content: center; font-size: 14px;
+}
+
+/* ─── RECIPE VIEW ─── */
+#main-guide { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; }
+#welcome {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; flex: 1; padding: 40px 24px; text-align: center;
+}
+#welcome .big { font-size: 56px; font-weight: 900; letter-spacing: 6px; color: var(--border); text-transform: uppercase; }
+#welcome p { color: var(--text-muted); font-size: 13px; margin-top: 12px; }
+#recipe-view { display: none; padding: 24px 20px 120px; }
+.recipe-hero {
+  width: 100%; border-radius: 14px; overflow: hidden;
+  margin-bottom: 20px; background: var(--surface2);
+  border: 1px solid var(--border); max-height: 220px;
+}
+.recipe-hero img { width: 100%; height: 220px; object-fit: cover; display: block; }
+.recipe-hero-placeholder {
+  height: 120px; display: flex; align-items: center; justify-content: center;
+  font-size: 48px;
+}
+.rtag { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent2); margin-bottom: 6px; }
+.rtitle { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1.2; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 1px; }
+.rdivider { width: 40px; height: 3px; background: var(--accent); margin-bottom: 20px; border-radius: 2px; }
+.recipe-actions {
+  display: flex; gap: 8px; margin-bottom: 20px;
+}
+.recipe-action-btn {
+  flex: 1; border: none; border-radius: 10px; padding: 9px 10px;
+  font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.recipe-edit-btn { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+.recipe-del-btn { background: rgba(224,82,82,0.12); color: var(--red); border: 1px solid rgba(224,82,82,0.2); }
+#nav-footer {
+  display: none;
+  position: fixed; bottom: 0; right: 0;
+  left: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 10px 14px 22px;
+  gap: 10px;
+  z-index: 40;
+}
+#nav-footer.visible { display: flex; }
+.nav-arrow-btn {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-muted); padding: 10px 12px; border-radius: 12px;
+  font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; gap: 6px;
+  transition: all 0.2s; overflow: hidden;
+}
+.nav-arrow-btn:active { border-color: var(--accent); color: var(--accent); }
+.nav-arrow-btn:disabled { opacity: 0.25; cursor: default; }
+.nav-arrow-btn.prev { justify-content: flex-start; }
+.nav-arrow-btn.next { justify-content: flex-end; }
+.nav-arrow-name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+
+.step-block {
+  margin-bottom: 8px; display: flex; gap: 12px; align-items: flex-start;
+  padding: 11px 13px; background: var(--surface); border-radius: 10px; border: 1px solid var(--border);
+}
+.step-num { font-size: 10px; font-weight: 700; color: var(--accent); min-width: 20px; padding-top: 2px; }
+.step-text { font-size: 14px; line-height: 1.6; color: var(--text); font-weight: 300; }
+
+/* ─── DASHBOARD ─── */
+#dashboard-screen { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px 60px; }
+.dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.dash-header h2 { font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); }
+.add-btn {
+  background: var(--accent); color: #000; border: none;
+  padding: 8px 18px; border-radius: 20px; font-size: 13px;
+  font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dash-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden; cursor: pointer;
+  transition: border-color 0.2s;
+}
+.dash-card:active { border-color: var(--accent); }
+.dash-card-img {
+  width: 100%; height: 110px; object-fit: cover;
+  background: var(--surface2); display: block;
+}
+.dash-card-placeholder {
+  width: 100%; height: 110px; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center; font-size: 36px;
+}
+.dash-card-body { padding: 10px 12px 12px; }
+.dash-card-cat { font-size: 9px; color: var(--accent2); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
+.dash-card-name { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; }
+.dash-card-actions { display: flex; gap: 6px; margin-top: 8px; }
+.dash-edit-btn, .dash-del-btn {
+  flex: 1; border: none; border-radius: 8px; padding: 5px;
+  font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.dash-edit-btn { background: var(--surface2); color: var(--text-muted); }
+.dash-del-btn { background: rgba(224,82,82,0.15); color: var(--red); }
+.empty-dash { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 14px; }
+.empty-dash .icon { font-size: 48px; margin-bottom: 12px; }
+
+/* ─── MODAL ─── */
+#modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  z-index: 1000; align-items: flex-end; justify-content: center;
+}
+#modal-overlay.open { display: flex; }
+#modal {
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 520px; max-height: 90vh;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 20px 18px 40px;
+}
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+.modal-title { font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 18px; text-transform: uppercase; }
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; display: block; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); padding: 10px 12px; border-radius: 10px;
+  font-size: 14px; outline: none; font-family: inherit;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+.form-textarea { resize: vertical; min-height: 100px; }
+.form-select { appearance: none; -webkit-appearance: none; }
+.img-url-row { display: flex; gap: 8px; }
+.img-url-row .form-input { flex: 1; }
+.img-preview-box {
+  margin-top: 8px; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--border); background: var(--surface2);
+  display: none; height: 140px;
+}
+.img-preview-box img { width: 100%; height: 140px; object-fit: cover; display: block; }
+.steps-list { margin-bottom: 8px; }
+.step-input-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+.step-input-row .form-input { flex: 1; }
+.remove-step-btn {
+  background: rgba(224,82,82,0.15); border: none; color: var(--red);
+  width: 32px; height: 36px; border-radius: 8px; font-size: 16px;
+  cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+}
+.add-step-btn {
+  background: var(--surface2); border: 1px dashed var(--border);
+  color: var(--text-muted); width: 100%; padding: 9px;
+  border-radius: 10px; font-size: 13px; cursor: pointer; font-family: inherit;
+}
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.modal-save { flex: 1; background: var(--accent); color: #000; border: none; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.modal-cancel { background: var(--surface2); color: var(--text-muted); border: none; padding: 13px 20px; border-radius: 12px; font-size: 15px; cursor: pointer; font-family: inherit; }
+
+/* ─── RECIPE MODAL (view from dashboard) ─── */
+#recipe-modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+  z-index: 1000; align-items: flex-end; justify-content: center;
+}
+#recipe-modal-overlay.open { display: flex; }
+#recipe-modal {
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 520px; max-height: 90vh;
+  overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 18px 40px;
+}
+.recipe-modal-close { float: right; background: var(--surface2); border: none; color: var(--text-muted); width: 30px; height: 30px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- SPLASH SCREEN -->
+<div id="splash" class="screen active">
+  <div class="splash-dots">
+    <div class="dot" style="width:200px;height:200px;top:-60px;right:-60px;"></div>
+    <div class="dot" style="width:120px;height:120px;bottom:80px;left:-40px;"></div>
+    <div class="dot" style="width:80px;height:80px;bottom:200px;right:30px;"></div>
+  </div>
+  <span class="splash-emoji">🍣</span>
+  <div class="splash-title">Take Sushi</div>
+  <div class="splash-sub">Kitchen Guide</div>
+  <div class="splash-divider"></div>
+  <div class="splash-tagline">Your complete prep reference for every dish on the menu</div>
+  <button class="splash-btn" onclick="enterApp()">Enter Kitchen →</button>
+</div>
+
+<!-- TOP NAV -->
+<div id="topnav">
+  <button id="toggle-btn" onclick="toggleSidebar()">☰</button>
+  <button class="nav-tab active" onclick="showTab('guide')">📖 Guide</button>
+  <button class="nav-tab" onclick="showTab('dashboard')">⚙️ Dashboard</button>
+</div>
+
+<!-- GUIDE SCREEN -->
+<div id="guide-screen" class="screen">
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h2>🍱 Kitchen Guide</h2>
+      <p>Select a dish</p>
+    </div>
+    <div id="search-box">
+      <input type="text" id="search" placeholder="Search dishes..." oninput="filterDishes(this.value)">
+    </div>
+    <nav id="nav"></nav>
+  </div>
+  <div id="main-guide">
+    <div id="welcome">
+      <div class="big">PREP</div>
+      <p>Select a dish from the sidebar</p>
+    </div>
+    <div id="recipe-view"></div>
+  </div>
+</div>
+<div id="nav-footer">
+  <button id="btn-prev" class="nav-arrow-btn prev" onclick="navToDish(currentDishIndex-1)">&#8592; <span id="prev-name" class="nav-arrow-name"></span></button>
+  <button id="btn-next" class="nav-arrow-btn next" onclick="navToDish(currentDishIndex+1)"><span id="next-name" class="nav-arrow-name"></span> &#8594;</button>
+</div>
+
+<!-- DASHBOARD SCREEN -->
+<div id="dashboard-screen" class="screen">
+  <div class="dash-header">
+    <h2>My Dishes</h2>
+    <button class="add-btn" onclick="openAddModal()">+ Add Dish</button>
+  </div>
+  <div id="custom-grid" class="dash-grid"></div>
+  <div id="empty-dash" class="empty-dash">
+    <div class="icon">🍽️</div>
+    <div>No custom dishes yet.<br>Tap <b>+ Add Dish</b> to get started.</div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div id="modal-overlay" onclick="closeModalIfOutside(event)">
+  <div id="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Add New Dish</div>
+    <div class="form-group">
+      <label class="form-label">Dish Name *</label>
+      <input class="form-input" id="f-name" placeholder="e.g. Spicy Pork Stir Fry">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <select class="form-select" id="f-cat">
+        <option value="Soups">Soups</option>
+        <option value="Salads">Salads</option>
+        <option value="Appetizers - Boiled">Appetizers - Boiled</option>
+        <option value="Appetizers - Fried">Appetizers - Fried</option>
+        <option value="Appetizers - Deep Fried">Appetizers - Deep Fried</option>
+        <option value="Take Fries">Take Fries</option>
+        <option value="Korean BBQ">Korean BBQ</option>
+        <option value="Grilled">Grilled</option>
+        <option value="Noodles - Soba">Noodles - Soba</option>
+        <option value="Noodles - Udon">Noodles - Udon</option>
+        <option value="Ramen & Udon Soup">Ramen & Udon Soup</option>
+        <option value="Tteokbokki">Tteokbokki</option>
+        <option value="Extra Dishes" selected>Extra Dishes</option>
+        <option value="Custom">Custom</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Image URL (optional)</label>
+      <div class="img-url-row">
+        <input class="form-input" id="f-img" placeholder="https://..." oninput="previewImg()">
+      </div>
+      <div class="img-preview-box" id="img-preview-box">
+        <img id="img-preview" src="" alt="Preview">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Prep Steps *</label>
+      <div class="steps-list" id="steps-list"></div>
+      <button class="add-step-btn" onclick="addStepInput('')">+ Add Step</button>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-save" onclick="saveDish()">Save Dish</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECIPE VIEW MODAL (from dashboard) -->
+<div id="recipe-modal-overlay" onclick="closeRecipeModalIfOutside(event)">
+  <div id="recipe-modal">
+    <div class="modal-handle"></div>
+    <button class="recipe-modal-close" onclick="closeRecipeModal()">✕</button>
+    <div id="recipe-modal-content"></div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───
+var builtInMenu = {
+  "Soups": [
+    { id: "S01", name: "Miso Soup", steps: ["Boil a whole bucket of water","Add a flat big spoon miso paste — mix well","Add a teaspoon fish powder — mix again","Done. Needed every morning for service"]},
+    { id: "S02", name: "Gyoza Soup", steps: ["3 pork dumplings, a little carrots, onion, mushroom and water","Cook until boiling","Add a spoon beef powder and a beaten egg","A little scallion on top. Done"]},
+    { id: "S03", name: "Hot & Sour Soup", steps: ["2.5 black spoons soup base (already seasoned)","A slice tofu cut into long strips, a little mushroom, carrots — boiling","Drop a beaten egg","Scallion on top. Done"]},
+    { id: "S04", name: "Seafood Soup", steps: ["4 kinds of seafood: 1 big mussel, 1 portion squid, 1 shrimp, 1 crab meat cut into 2pcs","A little carrots, onion, mushroom, water and udon soup base — boiling","Add salt and a beaten egg","A little scallion on top. Done"]},
+    { id: "S05", name: "Salmon Head Soup", steps: ["1 salmon head cut into 2 — defrost around 2 mins in microwave","Pan fry until smelling protein","Add half tofu (cut into 9 cubes), a little mushroom (about 3pcs)","More than half bowl water — boiling — add salt","Scallion on top + white pepper powder"]},
+    { id: "S06", name: "Sundubu Jigae", steps: ["4 kinds of seafood: 2 big mussels, 1 portion squid, 2 shrimps, 1 crab meat cut into 2pcs","A soft tofu, a little chopped onion","Half bag sundubu sauce, one pc cabbage cut into thin slices","A little water, 2 spoons chilli powder, a little salt if necessary","Cook until boiling — drop 1 whole egg on top","A little scallion on the egg. Taste before serving. Done"]},
+    { id: "S07", name: "Gamjatang", steps: ["One portion pre-prepared pork bone — defrost 2-3 mins in bowl by microwave","Add a little kimchi, suitable amount of water","2 spoons chilli powder, half spoon dried garlic, 1 spoon beef powder — boiling","Peel a potato, cut in half into slices — microwave about 2 mins until soft","Add into bone soup. Taste before serving. Done"]},
+    { id: "EXTRA-SS", name: "Spicy Pork Bone Soup", steps: ["Boil bones in water (measure with takeout container)","Add diced onion, green onion tail, mushroom, green onion","Add beef powder + kimchi + Korean chilli paste","Add 5 pcs potato","Boil properly until done"]},
+    { id: "EXTRA-SF", name: "Seafood Soup (Extra)", steps: ["2 shrimp, 2 squid, 2 small shells, 1 big shell, 3 veggies, bok choy","Udon base + garlic powder","Boil together until done"]},
+    { id: "EXTRA-OS", name: "Oden Soup Premium", steps: ["Oden base + garlic + water in pot","Add all seafood (8 pieces total) + garlic powder + fish egg","Add 2 zucchini + 2 radish","Boil until everything cooked through"]}
+  ],
+  "Salads": [
+    { id: "SA05", name: "Tofu Salad (Spicy)", steps: ["Half tofu cut into 9 cubes","Base: iceberg cabbage, carrots, spring mix, cucumber and avocado","Place tofu cubes on top of vegetables","Japanese sesame salad sauce drizzled on top"]}
+  ],
+  "Appetizers - Boiled": [
+    { id: "A01", name: "Edamame", steps: ["Boil a portion soybeans (1/3 bag)","Sift out water","Scatter salt evenly. Done"]},
+    { id: "A02", name: "Fava Bean (Broad Bean)", steps: ["A portion fava beans, a little salt, a star anise, a myrcia leaf and a small pc cinnamon","Cook until boiling — turn to simmer for a while (1-2 mins). Done"]}
+  ],
+  "Appetizers - Fried": [
+    { id: "A03", name: "Gyoza (Beef/Pork/Veggie)", steps: ["6pcs gyoza on the special pan","Add a little oil and a little water — just cover all the bottom","Cover with lid, cook until sizzling","Open — keep watching bottom of gyoza until turning golden color. Done"]},
+    { id: "A04", name: "Tuna Tataki", steps: ["Pick a chunk of tuna (suitable size) from sushi bar","Fully stick dried garlic on all 6 faces","Saute every face until color changed (about 30 seconds only)","Slice into about 9pcs — put evenly on dish","Put a little scallion on each slice","Scatter 7-spicy powder on top. Done"]},
+    { id: "A06", name: "New Style Sashimi", steps: ["Pick up 9 sliced salmon from sushi bar","Top each slice with ground ginger and scallion","Cook around a spoon olive oil until smoking","Pour evenly on each slice","Drizzle with fish juice (pre-prepared). Done"]}
+  ],
+  "Appetizers - Deep Fried": [
+    { id: "A07", name: "Spring Rolls", steps: ["5pcs — deep-fried 4 mins"]},
+    { id: "A08", name: "Agedashi Tofu", steps: ["A whole tofu cut into 18 cubes","Every face fully stick potato starch","Deep-fried in black oil about 3 mins","Top with chopped green onion + scatter 7-spicy powder"]},
+    { id: "A09", name: "Tokoyaki", steps: ["6pcs deep-fried 5 mins or a little more","Top orderly with takoyaki sauce, mayonnaise crosswise","Scatter seaweed powder and bonito flakes"]},
+    { id: "A10", name: "Kaki Fry", steps: ["6pcs deep-fried 4 mins","With a little spread salad beneath it. Done"]},
+    { id: "A11", name: "Deep Fried Scallop", steps: ["6pcs deep-fried 3 mins in old oil"]},
+    { id: "A12", name: "Crab Meat Tempura", steps: ["Tempura way — deep-fried 7pcs crab meats in new oil about 2 mins"]},
+    { id: "A13", name: "Avocado Tempura", steps: ["Tempura way — deep-fried 6pcs avocado (sliced from half avocado) in new oil about 2 mins"]},
+    { id: "A14", name: "Mushroom Tempura", steps: ["Tempura way — deep-fried 6pcs normal size whole mushroom (big ones cut in half) in new oil about 3 mins"]},
+    { id: "A15", name: "Japanese Pancake (Okonomiyaki)", steps: ["Tempura way — deep-fried in new oil about 4 mins","Cut into 4pcs with a little spread salad beneath","Top with takoyaki sauce and mayonnaise same way as Tokoyaki"]},
+    { id: "A16", name: "Chicken Kara'ge", steps: ["One portion pre-prepared chicken leg","Fully stick potato starch until color turning white","Deep-fried 3-4 mins (depends on size)"]},
+    { id: "A17", name: "7-Spicy Calamari", steps: ["One portion pre-prepared sliced squid","Fully stick potato starch until color turning white","Deep-fried 2 mins","Scatter 7-spicy powder"]},
+    { id: "A18", name: "7-Spicy Salmon Skin", steps: ["Defrost pre-prepared salmon skin slice by hot water","Tempura way — deep-fried in new oil about 3 mins","Scatter 7-spicy powder"]},
+    { id: "A19", name: "Spicy Mango Prawns", steps: ["Defrost 6 jumbo shrimps by hot water","Tempura way — deep-fried in new oil about 3 mins","Give them to sushi bar"]},
+    { id: "A20", name: "Veggie Tempura", steps: ["Tempura way — deep-fry 2 yams (sweet potato), 2 squashes","2 additions chosen by customer: a. asparagus / b. eggplant / c. zucchini","About 3-4 mins (depends on thickness)"]},
+    { id: "A21", name: "Shrimp Tempura", steps: ["Tempura way — deep-fried 5pcs shrimps"]},
+    { id: "A22", name: "Assorted Tempura", steps: ["Tempura way — deep-fry 2 yams, 2 squashes, 2 shrimps","About 3 mins (depends on thickness)"]},
+    { id: "SOFT", name: "Soft Crab Tempura", steps: ["Microwave one soft crab 1 min","Cut into 2","Tempura way — deep-fry a few mins (depends on size)","Double check if well cooked and serve"]}
+  ],
+  "Take Fries": [
+    { id: "A29", name: "French Fries / Sweet Potato", steps: ["Sweet potato: tempura way then cut into strips","OR French fry: one portion deep-frying 3 mins"]}
+  ],
+  "Korean BBQ": [
+    { id: "KBBQ-P", name: "Five Middle-Split Prawns", steps: ["Defrost one portion prepared 5 prawns in running cold water","Put on a long plate","Sprinkle teriyaki sauce on each prawn"]},
+    { id: "KBBQ-M", name: "Four Kinds of Meats", steps: ["1. Defrost one portion sliced pork 1 min microwave until soft — mix with a little sesame oil — set on dish 1/5 part","2. One portion sliced chicken breast (already salted) — mix a little sesame oil — set on dish 1/5 part","3. One portion sliced beef — mix a little sesame oil — set on dish 1/5 part","4. One portion sliced beef (already marinated) — mix suitable sriracha chilli sauce + a little sesame oil — set on dish 1/5 part","5. Lastly scatter a little sesame on each meat"]},
+    { id: "KBBQ-V", name: "Three Kinds of Vegetables", steps: ["1. One big portion sliced onion + some sliced white mushroom on top — set in middle of 1/5 dish part","2. One portion romaine lettuce, 4 slices zucchini, 1 handful enoki mushroom (needle mushroom) — serve on a plate"]}
+  ],
+  "Grilled": [
+    { id: "CR04", name: "Grilled Squid", steps: ["Check clean after defrost 1 min in microwave","Deep-fry 30 secs in black oil","Stick on a layer of flour — grill with oil until smell protein","Slice and serve with eel sauce topping and sesame","A slice lemon beside — lay salad on bottom for decoration"]},
+    { id: "CR05", name: "Grilled Mackerel", steps: ["Defrost 1 min in microwave","Stick on a layer of flour — grill with oil double sides until smell protein","Serve with soy sauce and a slice lemon beside","Lay salad on bottom for decoration"]},
+    { id: "CR06", name: "BBQ Beef Rib", steps: ["Defrost 1 min in microwave","Grill with oil until color changed","Stir-fry three kinds of vegetables — put on beneath","Drizzle with teriyaki sauce and sesame"]},
+    { id: "ER07", name: "Beef Teriyaki", steps: ["One portion prepared sliced beef — cook with a little oil until color changed","Add half spoon beef powder","Deep-fry three kinds of vegetables and three pcs green onion strips for 10 secs","Mix with half spoon beef powder","Spread on plate then spread beef on it"]}
+  ],
+  "Noodles - Soba": [
+    { id: "EN01", name: "Veggie Yaki Soba", steps: ["Half tofu cut into 9 cubes — every face fully stick potato starch","Deep-fried in black oil about 3 mins — standby","Hot water soak soba to defrost","Stir-fry 3 kinds of vegetables and 3pcs scallion strips and tofu","Add soft soba (thin noodle) — add a spoon beef powder","Drizzle several circles teriyaki sauce — mix well until sauce spreads evenly","Scatter a little sesame on dish top"]},
+    { id: "EN02", name: "Chicken Yaki Soba", steps: ["Prepare one portion chicken kara'ge — standby","Hot water soak soba to defrost","Stir-fry 3 kinds of vegetables and 3pcs scallion strips, soba and chicken","Add a spoon beef powder — drizzle several circles teriyaki sauce","Mix well until sauce spreads evenly","Scatter a little sesame on top"]},
+    { id: "EN03", name: "Beef Yaki Soba", steps: ["Stir-fry one portion beef slice until color changed","Add 3 vegetables and 3 scallion strips","Add hot water defrosted soba","Add a spoon beef powder — drizzle several circles teriyaki sauce","Mix well until sauce spreads evenly","Scatter a little sesame on dish top"]},
+    { id: "EN04", name: "Shrimp Yaki Soba", steps: ["Prepare 5 prawns — soak in hot water","Stir-fry 3 kinds of vegetables and 3pcs scallion strips","Add hot water defrosted soba and prawn","Add a spoon beef powder — drizzle several circles teriyaki sauce","Mix well until sauce spreads evenly","Scatter a little sesame on dish top"]}
+  ],
+  "Noodles - Udon": [
+    { id: "EN05", name: "Veggie Yaki Udon", steps: ["Half tofu cut into 9 cubes — every face fully stick potato starch","Deep-fried in black oil about 3 mins — standby","Stir-fry 3 kinds of vegetables and 3pcs scallion strips","Add hot water defrosted udon and tofu","Add a spoon beef powder — drizzle several circles teriyaki sauce","Mix well until sauce spreads evenly","Scatter a little sesame on dish top"]},
+    { id: "EN06", name: "Chicken Yaki Udon", steps: ["Prepare one portion chicken kara'ge — set aside","Stir-fry 3 kinds of vegetables and 3pcs scallion strips","Add hot water defrosted udon and chicken","Add a spoon beef powder — drizzle several circles teriyaki sauce","Mix well until sauce spreads evenly","Scatter a little sesame on dish top"]},
+    { id: "EN07", name: "Beef Yaki Udon", steps: ["Stir-fry one portion beef slice until color changed","Add 3 vegetables and 3 scallion strips","Add hot water defrosted udon","Add a spoon beef powder — drizzle several circles teriyaki sauce","Mix well until sauce spreads evenly","Scatter a little sesame on dish top"]},
+    { id: "EN08", name: "Shrimp Yaki Udon", steps: ["Prepare 5 prawns — soak in hot water","Stir-fry 3 kinds of vegetables and 3pcs scallion strips","Add hot water defrosted udon and prawn","Add a spoon beef powder — drizzle several circles teriyaki sauce","Mix well until sauce spreads evenly","Scatter a little sesame on dish top"]},
+    { id: "YUKI", name: "Yaki Udon Chicken Breast Soup", steps: ["Put a little udon soup base in soup pan","Add water","Add beef powder","Add 3 veggies","Add udon noodles from steamer"]}
+  ],
+  "Ramen & Udon Soup": [
+    { id: "EN09", name: "Japanese Chashu Ramen", steps: ["1. Boil warm water with ramen until inside ramen is soft","2. Mix 16oz water, 1.5 chashu ramen soup base, 1 spoon cream, 1pc fish cake, black mushroom chopped, 3 marinated bamboo strips, 3pcs bok choy","3. Microwave one portion pork slices 1 min then torch until color slightly changed (if busy, no need)","4. Sift ramen then set every ingredient on pattern in special ramen bowl","5. Add 3 torched pork and a marinated egg cut in half — lastly scatter chopped green onion","For takeout: soup in 16oz cup, dry ingredients separated in a plastic bowl"]},
+    { id: "EN10", name: "Veggie Udon Soup", steps: ["1. Half tofu cut into 9 cubes — every face fully stick potato starch — deep-fried in black oil 3 mins — set aside","2. Stir-fry 3 vegetables then add water, some udon soup base, suitable salt and hot water defrosted udon, tofu — boiling again","3. Add a sun egg on top — topping with chopped green onion"]},
+    { id: "EN11", name: "Nabe Yaki Udon", steps: ["1. Boil 4 kinds of seafood (1 big mussel, squid, 3 shrimps, 1 crab meat cut into 2pcs), 3 vegetables and water — add some udon soup base, suitable salt and udon — boiling again","2. Add a sun egg on top — topping with chopped green onion","3. Tempura way deep-fry 2 shrimps — serve beside the udon together"]},
+    { id: "EN12", name: "Jam Bong", steps: ["1. Boil 4 kinds of seafood (1 big mussel, squid, 3 shrimps, 1 crab meat cut into 2pcs), onion, shii-take cut into 2, water — add 1/2 bag sundubu soup base, suitable salt, 2 spoons chilli powder, 1 spoon dry garlic, kimchi and udon","2. Add a sun egg on top — topping with chopped green onion. Done"]},
+    { id: "CR12", name: "Japanese Hot Pot", steps: ["1. 12pcs sliced beef roll set on the round plate — decoration in centre","2. Cut 2pcs tofu — deep-fry until color changed","3. Cut 2-3 leaves nappa cabbage into squares, cut crosswise on a whole shii-take, cut 2pcs carrots flowers and 3pcs scallion strips and tofu — set beside the pot","4. Set one portion udon in the middle — pour half pot special sauce","5. Let customer cook themselves — a raw egg (if customer requires, make onsen egg) in a glass bowl"]},
+    { id: "SUKI", name: "Sukiyaki", steps: ["Boil udon noodle","In saucepan: boil sukiyaki sauce (from table)","Add beef into sukiyaki sauce","White lettuce cut in pieces — add in"]}
+  ],
+  "Tteokbokki": [
+    { id: "TTK-DI", name: "Tteokbokki (Dine-in)", steps: ["Round: Korean fish cake cut into 4 / spam cut into 2 / 1 boiled egg / 1 portion cheese / 1 portion corn / 2 crab meat stick cut into 4 / enoki mushroom / bok choy","In the middle — A: 2 soup spoons binbimbap sauce, 1 chilli powder, 1 chilli flakes, 1 beef powder, miso, 500ml cold water — mix well","B: Three leaves romaine separated down there, 1 portion noodle on it, 6 pcs rice cakes beside it","⚠️ DON'T FORGET KIMCHI!"]},
+    { id: "TTK-TO", name: "Tteokbokki Takeout", steps: ["400ml water + half bottle tteokbokki sauce (red one)","Choice of protein + chauchau tteokbokki noodle","1 slice fish cake cut into 4 pieces + mushroom + bok choy + 1 slice spam cut into 2","Boil all together until gravy looks thick","Add 3 romaine lettuce pieces when almost done boiling","Cheese + corn — microwave in small appetizer plate","Square takeout plate: 2 crab sticks on top + kimchi","Put buttered corn and cheese on top"]}
+  ],
+  "Extra Dishes": [
+    { id: "PKC", name: "Pork Fried with Kimchi", steps: ["Boil diced pork — let water dry","Add kimchi + 3 veggies","2 big spatula scoops gochujang chilli paste + 1 handful black pepper + 1 chunk ginger","Garlic powder + chilli powder + a little sesame oil","Mix and cook until done"]},
+    { id: "SSN", name: "Spicy Seafood Noodle", steps: ["Boil 2 shrimp, 3 sankha kira, 1 squid, 1 lamcho seafood","Add onion, mushroom, carrot","Boil chosen noodle — use 1 sundubu jigae sauce (or udon base if no jam)","Don't put too much water","After cooking: top with kimchi + poached egg","If nabi: add 2 shrimp tempura on side"]},
+    { id: "BM", name: "Beef Marination (20kg Prep)", steps: ["2 tbsp baking soda","8 big spatula scoops marination sauce","Half bowl water + half bowl cooking oil","Mix well with beef"]},
+    { id: "SAC", name: "Sweet and Sour Chicken", steps: ["Karage-style chicken + fry all 4 veggies","Beef powder to taste","5 pcs pineapple + 1 tbsp sugar","Mix together","Dress with green onion"]},
+    { id: "BBA", name: "Bento Box B Set", steps: ["Yum x3","Shrimp tempura x2","Beef gyoza deep fried x3","Served in set plate"]},
+    { id: "SBB", name: "Spicy Bento Box", steps: ["Tofu with teriyaki sauce"]},
+    { id: "GYU", name: "Gyunadon", steps: ["Put gyunadon base in pan","Add beef and onion","Add egg white","Serve on top of rice","Add egg yolk on top"]},
+    { id: "CW", name: "Cheese Wonton (Prep)", steps: ["Black pepper","Garlic powder","Green onion","Mix filling and wrap"]},
+    { id: "BBQR", name: "BBQ Pork Ribs", steps: ["Same as beef teriyaki method","Fry pork ribs on pan until done","Drizzle teriyaki sauce"]},
+    { id: "BP", name: "Braised Pork", steps: ["Heat pork for 1:30 mins","Heat rice with 3 cooked veggies 1 min","Add egg and green onion"]}
+  ]
+};
+
+// ─── STORAGE ───
+var STORAGE_KEY = 'takeSushiCustomDishes';
+var customDishes = [];
+var editingIndex = -1;
+var editingBuiltInIndex = -1;
+var allDishList = [];
+var currentDishIndex = -1;
+
+function loadCustomDishes() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    customDishes = raw ? JSON.parse(raw) : [];
+  } catch(e) { customDishes = []; }
+}
+
+function saveCustomDishes() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(customDishes)); } catch(e) {}
+}
+
+// ─── NAVIGATION ───
+var currentTab = 'guide';
+var sidebarCollapsed = false;
+
+function enterApp() {
+  document.getElementById('splash').classList.remove('active');
+  document.getElementById('topnav').classList.add('visible');
+  showTab('guide');
+}
+
+function showTab(tab) {
+  currentTab = tab;
+  var screens = document.querySelectorAll('.screen');
+  for (var i = 0; i < screens.length; i++) screens[i].classList.remove('active');
+  var tabs = document.querySelectorAll('.nav-tab');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+
+  if (tab === 'guide') {
+    document.getElementById('guide-screen').classList.add('active');
+    tabs[0].classList.add('active');
+    document.getElementById('toggle-btn').style.display = '';
+  } else {
+    document.getElementById('dashboard-screen').classList.add('active');
+    tabs[1].classList.add('active');
+    document.getElementById('toggle-btn').style.display = 'none';
+    renderDashboard();
+  }
+}
+
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  sidebarCollapsed = !sidebarCollapsed;
+  if (sidebarCollapsed) sidebar.classList.add('collapsed');
+  else sidebar.classList.remove('collapsed');
+}
+
+// ─── BUILD SIDEBAR ───
+function buildSidebar() {
+  var nav = document.getElementById('nav');
+  nav.innerHTML = '';
+  var categories = Object.keys(builtInMenu);
+  for (var i = 0; i < categories.length; i++) {
+    (function(category) {
+      var dishes = builtInMenu[category];
+      var catBtn = document.createElement('button');
+      catBtn.className = 'category-btn';
+      catBtn.innerHTML = '<span>' + category + '</span><span class="arrow">&#8250;</span>';
+      var dishList = document.createElement('div');
+      dishList.className = 'dish-list';
+      catBtn.onclick = (function(cb, dl) {
+        return function() {
+          var isOpen = dl.classList.contains('open');
+          var allL = document.querySelectorAll('.dish-list');
+          var allB = document.querySelectorAll('.category-btn');
+          for (var x = 0; x < allL.length; x++) allL[x].classList.remove('open');
+          for (var y = 0; y < allB.length; y++) { allB[y].classList.remove('open'); allB[y].classList.remove('active'); }
+          if (!isOpen) { dl.classList.add('open'); cb.classList.add('open'); cb.classList.add('active'); }
+        };
+      })(catBtn, dishList);
+      for (var j = 0; j < dishes.length; j++) {
+        (function(dish) {
+          var btn = document.createElement('button');
+          btn.className = 'dish-btn';
+          var imgHtml = dish.image
+            ? '<img class="thumb" src="' + dish.image + '" onerror="this.style.display=\'none\'">'
+            : '<span class="thumb-placeholder">🍽️</span>';
+          btn.innerHTML = imgHtml + '<span>' + dish.name + '</span>';
+          btn.onclick = function() {
+            showRecipe(dish, btn);
+            document.getElementById('sidebar').classList.add('collapsed');
+            sidebarCollapsed = true;
+          };
+          dishList.appendChild(btn);
+        })(dishes[j]);
+      }
+      nav.appendChild(catBtn);
+      nav.appendChild(dishList);
+    })(categories[i]);
+  }
+}
+
+function showRecipe(dish, btn) {
+  var allBtns = document.querySelectorAll('.dish-btn');
+  for (var i = 0; i < allBtns.length; i++) allBtns[i].classList.remove('active');
+  if (btn) btn.classList.add('active');
+
+  // Track index in allDishList
+  for (var i = 0; i < allDishList.length; i++) {
+    if (allDishList[i].id === dish.id) { currentDishIndex = i; break; }
+  }
+
+  document.getElementById('welcome').style.display = 'none';
+  var rv = document.getElementById('recipe-view');
+  rv.style.display = 'block';
+
+  var cat = '';
+  var cats = Object.keys(builtInMenu);
+  for (var i = 0; i < cats.length; i++) {
+    for (var j = 0; j < builtInMenu[cats[i]].length; j++) {
+      if (builtInMenu[cats[i]][j].id === dish.id) { cat = cats[i]; break; }
+    }
+    if (cat) break;
+  }
+
+  var heroHtml = dish.image
+    ? '<div class="recipe-hero"><img src="' + dish.image + '" onerror="this.parentNode.innerHTML=\'<div class=&quot;recipe-hero-placeholder&quot;>🍽️</div>\'"></div>'
+    : '<div class="recipe-hero"><div class="recipe-hero-placeholder">🍽️</div></div>';
+
+  var stepsHtml = '';
+  for (var i = 0; i < dish.steps.length; i++) {
+    var n = (i+1) < 10 ? '0'+(i+1) : ''+(i+1);
+    stepsHtml += '<div class="step-block"><span class="step-num">'+n+'</span><span class="step-text">'+dish.steps[i]+'</span></div>';
+  }
+
+  var prevDish = currentDishIndex > 0 ? allDishList[currentDishIndex - 1] : null;
+  var nextDish = currentDishIndex < allDishList.length - 1 ? allDishList[currentDishIndex + 1] : null;
+
+  // Update fixed footer
+  var footer = document.getElementById('nav-footer');
+  var btnPrev = document.getElementById('btn-prev');
+  var btnNext = document.getElementById('btn-next');
+  document.getElementById('prev-name').textContent = prevDish ? prevDish.name : '';
+  document.getElementById('next-name').textContent = nextDish ? nextDish.name : '';
+  btnPrev.disabled = !prevDish;
+  btnNext.disabled = !nextDish;
+  footer.classList.add('visible');
+
+  var isBuiltIn = (cat !== '');
+  var actionsHtml = '';
+  if (isBuiltIn) {
+    actionsHtml = '<div class="recipe-actions">' +
+      '<button class="recipe-action-btn recipe-edit-btn" onclick="openEditBuiltIn(' + currentDishIndex + ')">✏️ Edit</button>' +
+      '<button class="recipe-action-btn recipe-del-btn" onclick="deleteBuiltIn(' + currentDishIndex + ')">🗑 Delete</button>' +
+      '</div>';
+  }
+  rv.innerHTML = heroHtml + '<div class="rtag">' + (cat || dish.category || 'Custom') + ' &middot; ' + (dish.id||'') + '</div><div class="rtitle">'+dish.name+'</div><div class="rdivider"></div>' + actionsHtml + stepsHtml;
+  var mg = document.getElementById('main-guide'); mg.scrollTop = 0; mg.scrollTo(0, 0);
+}
+
+
+function buildAllDishList() {
+  allDishList = [];
+  var cats = Object.keys(builtInMenu);
+  for (var i = 0; i < cats.length; i++) {
+    for (var j = 0; j < builtInMenu[cats[i]].length; j++) {
+      allDishList.push(builtInMenu[cats[i]][j]);
+    }
+  }
+}
+
+function navToDish(idx) {
+  if (idx < 0 || idx >= allDishList.length) return;
+  currentDishIndex = idx;
+  var dish = allDishList[idx];
+  // Find and highlight the correct sidebar button
+  var allBtns = document.querySelectorAll('.dish-btn');
+  var matchBtn = null;
+  for (var i = 0; i < allBtns.length; i++) {
+    if (allBtns[i].textContent.indexOf(dish.name) !== -1) {
+      matchBtn = allBtns[i];
+      break;
+    }
+  }
+  showRecipe(dish, matchBtn);
+}
+
+
+function openEditBuiltIn(idx) {
+  var dish = allDishList[idx];
+  editingIndex = -1;
+  editingBuiltInIndex = idx;
+  document.getElementById('modal-title').textContent = 'Edit Dish';
+  document.getElementById('f-name').value = dish.name;
+  // find category
+  var cat = '';
+  var cats = Object.keys(builtInMenu);
+  for (var i = 0; i < cats.length; i++) {
+    for (var j = 0; j < builtInMenu[cats[i]].length; j++) {
+      if (builtInMenu[cats[i]][j].id === dish.id) { cat = cats[i]; break; }
+    }
+    if (cat) break;
+  }
+  var sel = document.getElementById('f-cat');
+  for (var i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === cat) { sel.selectedIndex = i; break; }
+  }
+  document.getElementById('f-img').value = dish.image || '';
+  previewImg();
+  document.getElementById('steps-list').innerHTML = '';
+  for (var i = 0; i < dish.steps.length; i++) addStepInput(dish.steps[i]);
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function deleteBuiltIn(idx) {
+  var dish = allDishList[idx];
+  if (!confirm('Delete "' + dish.name + '"? This cannot be undone.')) return;
+  // Remove from builtInMenu
+  var cats = Object.keys(builtInMenu);
+  for (var i = 0; i < cats.length; i++) {
+    var arr = builtInMenu[cats[i]];
+    for (var j = 0; j < arr.length; j++) {
+      if (arr[j].id === dish.id) {
+        arr.splice(j, 1);
+        break;
+      }
+    }
+  }
+  buildAllDishList();
+  buildSidebar();
+  // Show next dish or welcome
+  if (allDishList.length > 0) {
+    var nextIdx = Math.min(idx, allDishList.length - 1);
+    currentDishIndex = nextIdx;
+    showRecipe(allDishList[nextIdx], null);
+  } else {
+    document.getElementById('recipe-view').style.display = 'none';
+    document.getElementById('welcome').style.display = '';
+    document.getElementById('nav-footer').classList.remove('visible');
+  }
+}
+
+function filterDishes(q) {
+  q = q.toLowerCase().trim();
+  var allBtns = document.querySelectorAll('.dish-btn');
+  var allL = document.querySelectorAll('.dish-list');
+  var allCat = document.querySelectorAll('.category-btn');
+  for (var i = 0; i < allBtns.length; i++) {
+    allBtns[i].classList.toggle('hidden', q !== '' && allBtns[i].textContent.toLowerCase().indexOf(q) === -1);
+  }
+  if (q) {
+    for (var i = 0; i < allL.length; i++) allL[i].classList.add('open');
+    for (var i = 0; i < allCat.length; i++) { allCat[i].classList.add('open'); allCat[i].classList.add('active'); }
+  } else {
+    for (var i = 0; i < allL.length; i++) allL[i].classList.remove('open');
+    for (var i = 0; i < allCat.length; i++) { allCat[i].classList.remove('open'); allCat[i].classList.remove('active'); }
+  }
+}
+
+// ─── DASHBOARD ───
+function renderDashboard() {
+  var grid = document.getElementById('custom-grid');
+  var empty = document.getElementById('empty-dash');
+  grid.innerHTML = '';
+  if (customDishes.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  for (var i = 0; i < customDishes.length; i++) {
+    (function(dish, idx) {
+      var card = document.createElement('div');
+      card.className = 'dash-card';
+      var imgHtml = dish.image
+        ? '<img class="dash-card-img" src="' + dish.image + '" onerror="this.outerHTML=\'<div class=&quot;dash-card-placeholder&quot;>🍽️</div>\'">'
+        : '<div class="dash-card-placeholder">🍽️</div>';
+      card.innerHTML = imgHtml +
+        '<div class="dash-card-body">' +
+        '<div class="dash-card-cat">' + (dish.category||'Custom') + '</div>' +
+        '<div class="dash-card-name">' + dish.name + '</div>' +
+        '<div class="dash-card-actions">' +
+        '<button class="dash-edit-btn" onclick="openEditModal('+idx+');event.stopPropagation()">Edit</button>' +
+        '<button class="dash-del-btn" onclick="deleteDish('+idx+');event.stopPropagation()">Delete</button>' +
+        '</div></div>';
+      card.onclick = function() { showCustomRecipe(dish); };
+      grid.appendChild(card);
+    })(customDishes[i], i);
+  }
+}
+
+function showCustomRecipe(dish) {
+  var overlay = document.getElementById('recipe-modal-overlay');
+  var content = document.getElementById('recipe-modal-content');
+  overlay.classList.add('open');
+  var stepsHtml = '';
+  for (var i = 0; i < dish.steps.length; i++) {
+    var n = (i+1) < 10 ? '0'+(i+1) : ''+(i+1);
+    stepsHtml += '<div class="step-block"><span class="step-num">'+n+'</span><span class="step-text">'+dish.steps[i]+'</span></div>';
+  }
+  var heroHtml = dish.image
+    ? '<div class="recipe-hero"><img src="'+dish.image+'" onerror="this.parentNode.innerHTML=\'<div class=&quot;recipe-hero-placeholder&quot;>🍽️</div>\'"></div>'
+    : '';
+  content.innerHTML = heroHtml + '<div class="rtag">'+(dish.category||'Custom')+'</div><div class="rtitle">'+dish.name+'</div><div class="rdivider"></div>'+stepsHtml;
+  document.getElementById('recipe-modal').scrollTop = 0;
+}
+
+function closeRecipeModal() { document.getElementById('recipe-modal-overlay').classList.remove('open'); }
+function closeRecipeModalIfOutside(e) { if (e.target === document.getElementById('recipe-modal-overlay')) closeRecipeModal(); }
+
+// ─── MODAL ───
+function openAddModal() {
+  editingIndex = -1;
+  editingBuiltInIndex = -1;
+  document.getElementById('modal-title').textContent = 'Add New Dish';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-cat').value = 'Extra Dishes';
+  document.getElementById('f-img').value = '';
+  document.getElementById('img-preview-box').style.display = 'none';
+  document.getElementById('steps-list').innerHTML = '';
+  addStepInput('');
+  addStepInput('');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function openEditModal(idx) {
+  editingIndex = idx;
+  var dish = customDishes[idx];
+  document.getElementById('modal-title').textContent = 'Edit Dish';
+  document.getElementById('f-name').value = dish.name;
+  document.getElementById('f-cat').value = dish.category || 'Extra Dishes';
+  document.getElementById('f-img').value = dish.image || '';
+  previewImg();
+  document.getElementById('steps-list').innerHTML = '';
+  for (var i = 0; i < dish.steps.length; i++) addStepInput(dish.steps[i]);
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModalIfOutside(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+function addStepInput(val) {
+  var list = document.getElementById('steps-list');
+  var row = document.createElement('div');
+  row.className = 'step-input-row';
+  var inp = document.createElement('input');
+  inp.className = 'form-input';
+  inp.placeholder = 'e.g. Boil water with...';
+  inp.value = val || '';
+  var del = document.createElement('button');
+  del.className = 'remove-step-btn';
+  del.innerHTML = '&times;';
+  del.onclick = function() { list.removeChild(row); };
+  row.appendChild(inp);
+  row.appendChild(del);
+  list.appendChild(row);
+}
+
+function previewImg() {
+  var url = document.getElementById('f-img').value.trim();
+  var box = document.getElementById('img-preview-box');
+  var img = document.getElementById('img-preview');
+  if (url) {
+    img.src = url;
+    box.style.display = 'block';
+    img.onerror = function() { box.style.display = 'none'; };
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+function saveDish() {
+  var name = document.getElementById('f-name').value.trim();
+  if (!name) { alert('Please enter a dish name'); return; }
+  var stepInputs = document.querySelectorAll('#steps-list .step-input-row input');
+  var steps = [];
+  for (var i = 0; i < stepInputs.length; i++) {
+    var v = stepInputs[i].value.trim();
+    if (v) steps.push(v);
+  }
+  if (steps.length === 0) { alert('Please add at least one prep step'); return; }
+
+  if (editingBuiltInIndex >= 0) {
+    // Edit a built-in dish
+    var dish = allDishList[editingBuiltInIndex];
+    dish.name = name;
+    dish.image = document.getElementById('f-img').value.trim();
+    dish.steps = steps;
+    var newCat = document.getElementById('f-cat').value;
+    // Move dish to new category if changed
+    var cats = Object.keys(builtInMenu);
+    var oldCat = '';
+    for (var i = 0; i < cats.length; i++) {
+      for (var j = 0; j < builtInMenu[cats[i]].length; j++) {
+        if (builtInMenu[cats[i]][j].id === dish.id) { oldCat = cats[i]; break; }
+      }
+      if (oldCat) break;
+    }
+    if (oldCat !== newCat) {
+      // Remove from old, add to new
+      for (var j = 0; j < builtInMenu[oldCat].length; j++) {
+        if (builtInMenu[oldCat][j].id === dish.id) { builtInMenu[oldCat].splice(j,1); break; }
+      }
+      if (!builtInMenu[newCat]) builtInMenu[newCat] = [];
+      builtInMenu[newCat].push(dish);
+    }
+    buildAllDishList();
+    buildSidebar();
+    // Re-find index after rebuild
+    for (var i = 0; i < allDishList.length; i++) {
+      if (allDishList[i].id === dish.id) { currentDishIndex = i; break; }
+    }
+    showRecipe(dish, null);
+    editingBuiltInIndex = -1;
+    closeModal();
+    return;
+  }
+
+  var dish = {
+    id: 'CUSTOM-' + Date.now(),
+    name: name,
+    category: document.getElementById('f-cat').value,
+    image: document.getElementById('f-img').value.trim(),
+    steps: steps
+  };
+  if (editingIndex >= 0) {
+    dish.id = customDishes[editingIndex].id;
+    customDishes[editingIndex] = dish;
+  } else {
+    customDishes.push(dish);
+  }
+  saveCustomDishes();
+  closeModal();
+  renderDashboard();
+}
+
+function deleteDish(idx) {
+  if (confirm('Delete "' + customDishes[idx].name + '"?')) {
+    customDishes.splice(idx, 1);
+    saveCustomDishes();
+    renderDashboard();
+  }
+}
+
+// ─── INIT ───
+loadCustomDishes();
+buildSidebar();
+buildAllDishList();
+</script>
+</body>
+</html>
