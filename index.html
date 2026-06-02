@@ -640,11 +640,12 @@ function loadCustomDishes() {
   fetchDishesFromGitHub();
 }
 
-function fetchDishesFromGitHub() {
+function fetchDishesFromGitHub(callback) {
+  if (!GITHUB_TOKEN) { showSyncStatus('notoken'); return; }
   showSyncStatus('syncing');
-  var url = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + GITHUB_FILE;
+  var url = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + GITHUB_FILE + '?t=' + Date.now();
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', url + '?t=' + Date.now(), true);
+  xhr.open('GET', url, true);
   xhr.setRequestHeader('Authorization', 'token ' + GITHUB_TOKEN);
   xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
   xhr.onload = function() {
@@ -652,29 +653,41 @@ function fetchDishesFromGitHub() {
       try {
         var data = JSON.parse(xhr.responseText);
         dishesFileSha = data.sha;
-        var decoded = atob(data.content.replace(/\n/g, ''));
+        var decoded = atob(data.content.replace(/[\n\r]/g, ''));
         customDishes = JSON.parse(decoded) || [];
         localStorage.setItem(STORAGE_KEY, JSON.stringify(customDishes));
         renderDashboard();
         showSyncStatus('saved');
-      } catch(e) { showSyncStatus('error'); }
-    } else { showSyncStatus('error'); }
+        if (callback) callback();
+      } catch(e) {
+        console.error('Fetch parse error:', e);
+        showSyncStatus('error');
+      }
+    } else {
+      console.error('Fetch HTTP error:', xhr.status, xhr.responseText);
+      showSyncStatus('error');
+    }
   };
-  xhr.onerror = function() { showSyncStatus('error'); };
+  xhr.onerror = function() { console.error('Fetch network error'); showSyncStatus('error'); };
   xhr.send();
 }
 
 function saveCustomDishes() {
-  // Save to localStorage instantly
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(customDishes)); } catch(e) {}
-  // Then push to GitHub
-  pushDishesToGitHub();
+  // If we don't have SHA yet, fetch first then push
+  if (!dishesFileSha) {
+    fetchDishesFromGitHub(function() { pushDishesToGitHub(); });
+  } else {
+    pushDishesToGitHub();
+  }
 }
 
 function pushDishesToGitHub() {
+  if (!GITHUB_TOKEN) { showSyncStatus('notoken'); return; }
   showSyncStatus('syncing');
   var url = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + GITHUB_FILE;
-  var content = btoa(unescape(encodeURIComponent(JSON.stringify(customDishes, null, 2))));
+  var jsonStr = JSON.stringify(customDishes, null, 2);
+  var content = btoa(unescape(encodeURIComponent(jsonStr)));
   var payload = JSON.stringify({ message: 'Update dishes', content: content, sha: dishesFileSha });
   var xhr = new XMLHttpRequest();
   xhr.open('PUT', url, true);
@@ -687,19 +700,32 @@ function pushDishesToGitHub() {
         var data = JSON.parse(xhr.responseText);
         dishesFileSha = data.content.sha;
         showSyncStatus('saved');
-      } catch(e) { showSyncStatus('error'); }
-    } else { showSyncStatus('error'); }
+      } catch(e) {
+        console.error('Push parse error:', e);
+        showSyncStatus('error');
+      }
+    } else {
+      console.error('Push HTTP error:', xhr.status, xhr.responseText);
+      // If conflict (422), re-fetch SHA and retry
+      if (xhr.status === 409 || xhr.status === 422) {
+        dishesFileSha = '';
+        setTimeout(function() { saveCustomDishes(); }, 500);
+      } else {
+        showSyncStatus('error');
+      }
+    }
   };
-  xhr.onerror = function() { showSyncStatus('error'); };
+  xhr.onerror = function() { console.error('Push network error'); showSyncStatus('error'); };
   xhr.send(payload);
 }
 
 function showSyncStatus(state) {
   var el = document.getElementById('sync-status');
   if (!el) return;
-  if (state === 'syncing') { el.textContent = '⏳ Saving...'; el.style.color = 'var(--text-muted)'; }
-  else if (state === 'saved') { el.textContent = '✅ Saved'; el.style.color = 'var(--green)'; setTimeout(function(){ el.textContent = ''; }, 2500); }
-  else { el.textContent = '⚠️ Offline — changes saved locally'; el.style.color = 'var(--accent2)'; setTimeout(function(){ el.textContent = ''; }, 4000); }
+  if (state === 'syncing') { el.textContent = '⏳ Saving to GitHub...'; el.style.color = 'var(--text-muted)'; }
+  else if (state === 'saved') { el.textContent = '✅ Saved to GitHub'; el.style.color = 'var(--green)'; setTimeout(function(){ el.textContent = ''; }, 3000); }
+  else if (state === 'notoken') { el.textContent = '🔑 Tap the key icon to set your GitHub token'; el.style.color = 'var(--accent)'; }
+  else { el.textContent = '⚠️ Save failed — stored locally only'; el.style.color = 'var(--accent2)'; setTimeout(function(){ el.textContent = ''; }, 4000); }
 }
 
 // ─── NAVIGATION ───
