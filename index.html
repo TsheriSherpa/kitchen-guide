@@ -397,6 +397,7 @@ body {
   <button id="toggle-btn" onclick="toggleSidebar()">☰</button>
   <button class="nav-tab active" onclick="showTab('guide')">📖 Guide</button>
   <button class="nav-tab" onclick="showTab('dashboard')">⚙️ Dashboard</button>
+  <button class="nav-tab" onclick="showTokenModal()" style="margin-left:auto;font-size:18px;padding:4px 10px;" title="GitHub Settings">🔑</button>
 </div>
 
 <!-- GUIDE SCREEN -->
@@ -430,6 +431,7 @@ body {
     <h2>My Dishes</h2>
     <button class="add-btn" onclick="openAddModal()">+ Add Dish</button>
   </div>
+  <div id="sync-status" style="font-size:12px;margin-bottom:12px;min-height:18px;transition:color 0.3s;"></div>
   <div id="custom-grid" class="dash-grid"></div>
   <div id="empty-dash" class="empty-dash">
     <div class="icon">🍽️</div>
@@ -482,6 +484,25 @@ body {
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeModal()">Cancel</button>
       <button class="modal-save" onclick="saveDish()">Save Dish</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- TOKEN MODAL -->
+<div id="token-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:2000;align-items:flex-end;justify-content:center;" onclick="closeTokenModalOutside(event)">
+  <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:520px;padding:24px 20px 40px;">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;"></div>
+    <div style="font-size:17px;font-weight:800;color:var(--accent);margin-bottom:8px;text-transform:uppercase;">🔑 GitHub Token</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6;">Paste your GitHub Personal Access Token below. It is stored only on this device and never shared.</div>
+    <input id="token-input" type="password" class="form-input" placeholder="github_pat_..." style="margin-bottom:8px;">
+    <div id="token-status" style="font-size:12px;min-height:18px;margin-bottom:14px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeTokenModal()" style="flex:1;background:var(--surface2);border:none;color:var(--text-muted);padding:13px;border-radius:12px;font-size:15px;cursor:pointer;font-family:inherit;">Cancel</button>
+      <button onclick="saveToken()" style="flex:1;background:var(--accent);border:none;color:#000;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">Save Token</button>
+    </div>
+    <div style="margin-top:14px;text-align:center;">
+      <button onclick="clearToken()" style="background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;font-family:inherit;">Remove saved token</button>
     </div>
   </div>
 </div>
@@ -599,18 +620,87 @@ var STORAGE_KEY = 'takeSushiCustomDishes';
 var customDishes = [];
 var editingIndex = -1;
 var editingBuiltInIndex = -1;
+
+// ─── GITHUB CONFIG ───
+var GITHUB_TOKEN = localStorage.getItem('gh_token') || '';
+var GITHUB_OWNER = 'TsheriSherpa';
+var GITHUB_REPO = 'kitchen-guide';
+var GITHUB_FILE = 'dishes.json';
+var dishesFileSha = '';
 var allDishList = [];
 var currentDishIndex = -1;
 
 function loadCustomDishes() {
+  // Load from localStorage as instant cache while GitHub loads
   try {
     var raw = localStorage.getItem(STORAGE_KEY);
     customDishes = raw ? JSON.parse(raw) : [];
   } catch(e) { customDishes = []; }
+  // Then fetch latest from GitHub
+  fetchDishesFromGitHub();
+}
+
+function fetchDishesFromGitHub() {
+  showSyncStatus('syncing');
+  var url = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + GITHUB_FILE;
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.setRequestHeader('Authorization', 'token ' + GITHUB_TOKEN);
+  xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+  xhr.setRequestHeader('Cache-Control', 'no-cache');
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        dishesFileSha = data.sha;
+        var decoded = atob(data.content.replace(/\n/g, ''));
+        customDishes = JSON.parse(decoded) || [];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(customDishes));
+        renderDashboard();
+        showSyncStatus('saved');
+      } catch(e) { showSyncStatus('error'); }
+    } else { showSyncStatus('error'); }
+  };
+  xhr.onerror = function() { showSyncStatus('error'); };
+  xhr.send();
 }
 
 function saveCustomDishes() {
+  // Save to localStorage instantly
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(customDishes)); } catch(e) {}
+  // Then push to GitHub
+  pushDishesToGitHub();
+}
+
+function pushDishesToGitHub() {
+  showSyncStatus('syncing');
+  var url = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + GITHUB_FILE;
+  var content = btoa(unescape(encodeURIComponent(JSON.stringify(customDishes, null, 2))));
+  var payload = JSON.stringify({ message: 'Update dishes', content: content, sha: dishesFileSha });
+  var xhr = new XMLHttpRequest();
+  xhr.open('PUT', url, true);
+  xhr.setRequestHeader('Authorization', 'token ' + GITHUB_TOKEN);
+  xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function() {
+    if (xhr.status === 200 || xhr.status === 201) {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        dishesFileSha = data.content.sha;
+        showSyncStatus('saved');
+      } catch(e) { showSyncStatus('error'); }
+    } else { showSyncStatus('error'); }
+  };
+  xhr.onerror = function() { showSyncStatus('error'); };
+  xhr.send(payload);
+}
+
+function showSyncStatus(state) {
+  var el = document.getElementById('sync-status');
+  if (!el) return;
+  if (state === 'syncing') { el.textContent = '⏳ Saving...'; el.style.color = 'var(--text-muted)'; }
+  else if (state === 'saved') { el.textContent = '✅ Saved'; el.style.color = 'var(--green)'; setTimeout(function(){ el.textContent = ''; }, 2500); }
+  else { el.textContent = '⚠️ Offline — changes saved locally'; el.style.color = 'var(--accent2)'; setTimeout(function(){ el.textContent = ''; }, 4000); }
 }
 
 // ─── NAVIGATION ───
@@ -831,6 +921,35 @@ function deleteBuiltIn(idx) {
     document.getElementById('recipe-view').style.display = 'none';
     document.getElementById('welcome').style.display = '';
     document.getElementById('nav-footer').classList.remove('visible');
+  }
+}
+
+
+function showTokenModal() {
+  var saved = localStorage.getItem('gh_token') || '';
+  document.getElementById('token-input').value = saved;
+  document.getElementById('token-status').textContent = saved ? '✅ Token is saved' : 'No token saved yet';
+  document.getElementById('token-status').style.color = saved ? 'var(--green)' : 'var(--text-muted)';
+  document.getElementById('token-modal-overlay').style.display = 'flex';
+}
+function closeTokenModal() { document.getElementById('token-modal-overlay').style.display = 'none'; }
+function closeTokenModalOutside(e) { if (e.target.id === 'token-modal-overlay') closeTokenModal(); }
+function saveToken() {
+  var t = document.getElementById('token-input').value.trim();
+  if (!t) { alert('Please paste your token'); return; }
+  localStorage.setItem('gh_token', t);
+  GITHUB_TOKEN = t;
+  document.getElementById('token-status').textContent = '✅ Token saved!';
+  document.getElementById('token-status').style.color = 'var(--green)';
+  setTimeout(closeTokenModal, 1000);
+  fetchDishesFromGitHub();
+}
+function clearToken() {
+  if (confirm('Remove saved token?')) {
+    localStorage.removeItem('gh_token');
+    GITHUB_TOKEN = '';
+    document.getElementById('token-input').value = '';
+    document.getElementById('token-status').textContent = 'Token removed';
   }
 }
 
