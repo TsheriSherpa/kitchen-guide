@@ -644,10 +644,9 @@ function fetchDishesFromGitHub() {
   showSyncStatus('syncing');
   var url = 'https://api.github.com/repos/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/contents/' + GITHUB_FILE;
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', url, true);
+  xhr.open('GET', url + '?t=' + Date.now(), true);
   xhr.setRequestHeader('Authorization', 'token ' + GITHUB_TOKEN);
   xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
-  xhr.setRequestHeader('Cache-Control', 'no-cache');
   xhr.onload = function() {
     if (xhr.status === 200) {
       try {
